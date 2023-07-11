@@ -1,43 +1,86 @@
-<?php
-// Establish a connection to the database
-$servername = "sql6.freesqldatabase.com";
-$username = "sql6631689";
-$password = "dqiZgHiEHL";
-$dbname = "sql6631689";
+<?php 
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+session_start(); 
 
-// Check the connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+include "db_conn.php";
+
+if (isset($_POST['username']) && isset($_POST['password'])) {
+
+    function validate($data){
+
+       $data = trim($data);
+
+       $data = stripslashes($data);
+
+       $data = htmlspecialchars($data);
+
+       return $data;
+
+    }
+
+    $uname = validate($_POST['username']);
+
+    $pass = validate($_POST['password']);
+
+    if (empty($uname)) {
+
+        header("Location: index.php?error=User Name is required");
+
+        exit();
+
+    }else if(empty($pass)){
+
+        header("Location: index.php?error=Password is required");
+
+        exit();
+
+    }else{
+
+        $sql = "SELECT * FROM namelist WHERE user_name='$uname' AND password='$pass'";
+
+        $result = mysqli_query($conn, $sql);
+
+        if (mysqli_num_rows($result) === 1) {
+
+            $row = mysqli_fetch_assoc($result);
+
+            if ($row['username'] === $uname && $row['password'] === $pass) {
+
+                echo "Logged in!";
+
+                $_SESSION['username'] = $row['username'];
+
+                $_SESSION['name'] = $row['name'];
+
+                $_SESSION['id'] = $row['id'];
+
+                header("Location: dashboard.php");
+
+                exit();
+
+            }else{
+
+                header("Location: index.php?error=Incorect User name or password");
+
+                exit();
+
+            }
+
+        }else{
+
+            header("Location: index.php?error=Incorect User name or password");
+
+            exit();
+
+        }
+
+    }
+
+}else{
+
+    header("Location: index.php");
+
+    exit();
+
 }
-
-// Retrieve the form data
-$username = $_POST['username'];
-$password = $_POST['password'];
-
-// Prepare the SQL statement
-$stmt = $conn->prepare("SELECT * FROM namelist WHERE Username = ? AND Password = ?");
-$stmt->bind_param("ss", $username, $password);
-
-// Execute the query
-$stmt->execute();
-
-// Store the result
-$result = $stmt->get_result();
-
-// Check if a matching user was found
-if ($result->num_rows == 1) {
-    // User authenticated successfully
-    header("Location: dashboard.html");
-} else {
-    // Invalid username or password
-    header("Location: index.html");
-}
-
-// Close the prepared statement and database connection
-$stmt->close();
-$conn->close();
-
-// write a program to take input from website and verify it from sql?
 ?>
